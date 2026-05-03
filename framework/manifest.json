@@ -1,0 +1,32 @@
+{
+  "schema": "sonic-forage.master-prompt-arcade.v1",
+  "generated_utc": "2026-05-03T09:40:16Z",
+  "purpose": "Open-source community framework: master prompts, payloads, Unicode UI, endpoint workflow contracts, and a retro Strawberry AGI snake fallback game.",
+  "default_state": "closed_until_human_yes",
+  "modules": [
+    "master_prompt_guide",
+    "unicode_ui_kit",
+    "github_prompt_pack",
+    "json_payloads",
+    "tag_taxonomy",
+    "voice_workflow_contract",
+    "comfyui_endpoint_contract",
+    "service_down_arcade"
+  ],
+  "closed_gates": [
+    "public_posting",
+    "private_media_upload",
+    "real_endpoint_url_commit",
+    "secret_commit",
+    "paid_gpu_job",
+    "outreach",
+    "medical_legal_claims",
+    "payment_link",
+    "voice_to_shell"
+  ],
+  "game": {
+    "title": "Strawberry AGI Snake: Neon Forage Mode",
+    "entrypoint": "docs/arcade/index.html",
+    "storage": "localStorage high score only"
+  }
+}

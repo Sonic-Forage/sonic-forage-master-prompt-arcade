@@ -1,0 +1,23 @@
+{
+  "schema": "sonic-forage.workflow-registry.v1",
+  "workflows": [
+    {
+      "id": "repo-genesis",
+      "input": "messy idea",
+      "output": "forkable GitHub repo plan",
+      "gate": "closed_until_human_yes for external actions"
+    },
+    {
+      "id": "voice-persona-preview",
+      "input": "voice profile payload",
+      "output": "local preview script/copy",
+      "gate": "no public send"
+    },
+    {
+      "id": "comfyui-dry-run",
+      "input": "workflow payload",
+      "output": "local preview request",
+      "gate": "no real endpoint in git"
+    }
+  ]
+}

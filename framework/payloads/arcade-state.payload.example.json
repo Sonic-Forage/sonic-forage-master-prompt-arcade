@@ -1,0 +1,7 @@
+{
+  "schema": "sonic-forage.arcade-state.v1",
+  "game": "strawberry-agi-snake",
+  "score": 0,
+  "high_score_storage": "localStorage",
+  "offline_safe": true
+}

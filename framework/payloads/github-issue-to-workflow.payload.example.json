@@ -1,0 +1,15 @@
+{
+  "schema": "sonic-forage.issue-to-workflow.v1",
+  "issue_title": "Add new community prompt",
+  "tags": [
+    "prompt-pack",
+    "good-first-forage"
+  ],
+  "verification": [
+    "python3 scripts/verify.py"
+  ],
+  "closed_gates": [
+    "outreach",
+    "public_posting"
+  ]
+}

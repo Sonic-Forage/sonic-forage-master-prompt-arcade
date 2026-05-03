@@ -1,0 +1,27 @@
+name: Community framework improvement
+description: Add or improve prompts, payloads, tags, UI, workflows, or arcade features
+title: "Framework: "
+labels: [good-first-forage]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What should improve?
+    validations:
+      required: true
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane
+      options:
+        - master-prompt
+        - prompt-pack
+        - payload
+        - unicode-ui
+        - voice-workflow
+        - comfyui-workflow
+        - arcade
+        - verifier
+    validations:
+      required: true

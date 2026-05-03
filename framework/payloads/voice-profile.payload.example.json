@@ -1,0 +1,14 @@
+{
+  "schema": "sonic-forage.voice-profile.v1",
+  "voice_profile": "strawberry-agi-host",
+  "provider": "mock",
+  "line_examples": [
+    "Prompt shard collected.",
+    "Outage block dodged."
+  ],
+  "closed_gates": [
+    "public_send",
+    "paid_provider",
+    "voice_to_shell"
+  ]
+}

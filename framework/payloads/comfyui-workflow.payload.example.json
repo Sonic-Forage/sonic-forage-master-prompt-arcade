@@ -1,0 +1,11 @@
+{
+  "schema": "sonic-forage.comfyui-workflow.v1",
+  "workflow": "arcade-social-card",
+  "base_url_env": "COMFYUI_BASE_URL",
+  "mode": "dry_run_only",
+  "closed_gates": [
+    "paid_gpu",
+    "public_upload",
+    "private_media"
+  ]
+}

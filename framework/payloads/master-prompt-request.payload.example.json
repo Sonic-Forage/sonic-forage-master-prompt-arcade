@@ -1,0 +1,18 @@
+{
+  "schema": "sonic-forage.master-prompt-request.v1",
+  "idea": "Build a public-safe community toolkit for X",
+  "outputs": [
+    "README",
+    "docs",
+    "prompts",
+    "payloads",
+    "tags",
+    "verifier",
+    "Pages deck"
+  ],
+  "closed_gates": [
+    "public_posting",
+    "secrets",
+    "real_endpoint_urls"
+  ]
+}
