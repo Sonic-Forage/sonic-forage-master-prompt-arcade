@@ -14,6 +14,7 @@ This repo is the **starter control surface** for Sonic-Forage builders:
 - `docs/workflows/VOICE_AND_PERSONA_WORKFLOWS.md` — voice/persona routing with closed gates.
 - `docs/workflows/COMFYUI_ENDPOINT_SWITCHBOARD.md` — endpoint URL placeholders and workflow switch patterns.
 - `docs/arcade/index.html` — playable retro Strawberry AGI Snake.
+- `docs/comic/index.html` — Sonic Forage origin comic strip 🍓📖.
 
 ## 🎮 Play the game
 
@@ -28,6 +29,14 @@ Controls:
 - R: restart
 - M: mute/unmute synth bleeps
 - Eat strawberries, collect prompt shards, avoid outage blocks, hit high score.
+
+## 🍓📖 Read the origin comic
+
+Follow DJ Strawberry's journey from warehouse raves to intergalactic festivals:
+
+https://sonic-forage.github.io/sonic-forage-master-prompt-arcade/comic/
+
+Arrow keys to navigate, or click thumbnails. Rave on.
 
 ## 🧬 Master loop
 

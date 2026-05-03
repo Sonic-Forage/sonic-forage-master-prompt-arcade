@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sonic Forage: Origin Comic</title>
+<style>
+  :root {
+    --bg: #06000f;
+    --card-bg: #120520;
+    --pink: #ff3b8d;
+    --cyan: #00e5ff;
+    --yellow: #ffe66d;
+    --purple: #b347ea;
+    --green: #39ff14;
+    --orange: #ff9100;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    text-align: center;
+    padding: 30px 20px 10px;
+  }
+  header h1 {
+    font-size: clamp(28px, 6vw, 56px);
+    color: var(--yellow);
+    text-shadow: 0 0 30px var(--pink), 0 0 60px var(--purple);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  header .subtitle {
+    color: var(--cyan);
+    font-size: 1.1rem;
+    opacity: 0.85;
+    letter-spacing: 2px;
+  }
+
+  /* ---------- comic reader ---------- */
+  .reader {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    margin: 20px auto 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .panel-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 1 / 1;
+    border: 3px solid var(--pink);
+    border-radius: 18px;
+    overflow: hidden;
+    background: #0a0020;
+    box-shadow: 0 0 40px #ff3b8d33, 0 8px 32px #0008;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .panel-wrapper.transitioning {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  .panel-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* speech bubble overlay */
+  .bubble {
+    position: absolute;
+    background: #fffc;
+    backdrop-filter: blur(4px);
+    border: 2px solid #222;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #111;
+    max-width: 260px;
+    box-shadow: 0 4px 12px #0004;
+    z-index: 10;
+    pointer-events: none;
+    animation: popIn 0.4s ease-out;
+  }
+  .bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 24px;
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid #fffc;
+  }
+  .bubble.right::after { left: auto; right: 24px; }
+  .bubble.thought {
+    border-radius: 50px;
+    background: #ffeef8ee;
+    border-style: dashed;
+  }
+  @keyframes popIn {
+    from { opacity:0; transform: translateY(10px) scale(0.9); }
+    to { opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  /* navigation */
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .nav button {
+    background: var(--card-bg);
+    border: 2px solid var(--pink);
+    color: var(--pink);
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .nav button:hover {
+    background: var(--pink);
+    color: #fff;
+    box-shadow: 0 0 20px var(--pink);
+  }
+  .nav button:disabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+  }
+  .nav .panel-indicator {
+    color: var(--cyan);
+    font-weight: 700;
+    font-size: 1.1rem;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* thumbnail strip */
+  .thumb-strip {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 16px;
+    max-width: 600px;
+  }
+  .thumb {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.6;
+  }
+  .thumb:hover, .thumb.active {
+    border-color: var(--pink);
+    opacity: 1;
+    box-shadow: 0 0 12px var(--pink);
+    transform: scale(1.08);
+  }
+  .thumb svg { width:100%; height:100%; }
+
+  /* keyboard hint */
+  .key-hint {
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: #555;
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--cyan); text-decoration: none; }
+  footer a:hover { color: var(--pink); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍓 Sonic Forage: Origins</h1>
+  <div class="subtitle">★ THE COMIC ★</div>
+</header>
+
+<div class="reader">
+  <div class="panel-wrapper" id="panelContainer">
+    <!-- panels injected by JS -->
+  </div>
+
+  <div class="nav">
+    <button id="btnPrev" onclick="goPanel(-1)">◀ PREV</button>
+    <span class="panel-indicator" id="panelIndicator">1 / 8</span>
+    <button id="btnNext" onclick="goPanel(1)">NEXT ▶</button>
+  </div>
+
+  <div class="thumb-strip" id="thumbStrip"></div>
+
+  <div class="key-hint">← → arrow keys to navigate &nbsp;|&nbsp; click thumbnails</div>
+</div>
+
+<footer>
+  Sonic Forage Master Prompt Arcade · <a href="../">← back to docs</a>
+</footer>
+
+<script>
+// ========== PANEL DATA ==========
+const panels = [
+  {
+    title: "The Warehouse Discovery",
+    caption: "Late one night, deep in the industrial district, DJ Strawberry stumbled upon a pulsing beacon of light and bass...",
+    bubble: { text: "Whoa... what IS this place?!", top: "8%", left: "52%", cls: "" },
+    svg: `<defs>
+      <radialGradient id="g1" cx="50%" cy="50%"><stop offset="0%" stop-color="#1a0040"/><stop offset="100%" stop-color="#050010"/></radialGradient>
+      <linearGradient id="laser1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff3b8d"/><stop offset="100%" stop-color="#ff3b8d00"/></linearGradient>
+      <linearGradient id="laser2" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5ff"/><stop offset="100%" stop-color="#00e5ff00"/></linearGradient>
+      <radialGradient id="glow3" cx="50%" cy="30%"><stop offset="0%" stop-color="#ffe66d"/><stop offset="50%" stop-color="#ff3b8d88"/><stop offset="100%" stop-color="#ff3b8d00"/></radialGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g1)"/>
+    <!-- warehouse structure -->
+    <rect x="0" y="0" width="600" height="600" fill="none" stroke="#1a1050" stroke-width="2"/>
+    <line x1="0" y1="200" x2="600" y2="200" stroke="#1a1050" stroke-width="1"/>
+    <line x1="0" y1="400" x2="600" y2="400" stroke="#1a1050" stroke-width="1"/>
+    <line x1="200" y1="0" x2="200" y2="600" stroke="#1a1050" stroke-width="1"/>
+    <line x1="400" y1="0" x2="400" y2="600" stroke="#1a1050" stroke-width="1"/>
+    <!-- doorway light -->
+    <rect x="220" y="100" width="160" height="420" fill="#ff3b8d22" rx="5"/>
+    <polygon points="220,100 300,40 380,100" fill="#ff3b8d33"/>
+    <!-- laser beams -->
+    <line x1="280" y1="300" x2="120" y2="80" stroke="#ff3b8d" stroke-width="3" opacity="0.7"/>
+    <line x1="320" y1="350" x2="500" y2="100" stroke="#00e5ff" stroke-width="3" opacity="0.7"/>
+    <line x1="280" y1="280" x2="80" y2="450" stroke="#b347ea" stroke-width="2" opacity="0.6"/>
+    <line x1="340" y1="320" x2="520" y2="500" stroke="#39ff14" stroke-width="2" opacity="0.5"/>
+    <!-- crowd silhouettes inside -->
+    <ellipse cx="280" cy="380" rx="8" ry="18" fill="#0a0020"/>
+    <ellipse cx="310" cy="370" rx="7" ry="20" fill="#0a0020"/>
+    <ellipse cx="340" cy="385" rx="9" ry="16" fill="#0a0020"/>
+    <ellipse cx="260" cy="390" rx="6" ry="15" fill="#0a0020"/>
+    <!-- DJ Strawberry at entrance -->
+    <g transform="translate(480, 320)">
+      <!-- body -->
+      <ellipse cx="0" cy="40" rx="28" ry="38" fill="#ff2d55"/>
+      <!-- strawberry seeds -->
+      <circle cx="-10" cy="30" r="3" fill="#ffcc00"/>
+      <circle cx="10" cy="25" r="3" fill="#ffcc00"/>
+      <circle cx="-6" cy="48" r="3" fill="#ffcc00"/>
+      <circle cx="12" cy="45" r="2.5" fill="#ffcc00"/>
+      <circle cx="0" cy="20" r="2.5" fill="#ffcc00"/>
+      <!-- stem -->
+      <path d="M0,-10 Q-2,-25 5,-35 Q2,-28 -1,-15" fill="#2ecc40" stroke="#27ae30" stroke-width="1"/>
+      <ellipse cx="-10" cy="-28" rx="8" ry="4" fill="#2ecc40" transform="rotate(-30,-10,-28)"/>
+      <!-- eyes -->
+      <ellipse cx="-9" cy="38" rx="5" ry="6" fill="white"/>
+      <ellipse cx="9" cy="38" rx="5" ry="6" fill="white"/>
+      <circle cx="-9" cy="39" r="3" fill="#111"/>
+      <circle cx="9" cy="39" r="3" fill="#111"/>
+      <!-- third eye - glowing -->
+      <circle cx="0" cy="28" r="5" fill="#ffe66d"/>
+      <circle cx="0" cy="28" r="8" fill="#ffe66d44"/>
+      <circle cx="0" cy="28" r="3" fill="#fff"/>
+      <!-- mouth - amazed -->
+      <ellipse cx="0" cy="52" rx="6" ry="5" fill="#111"/>
+      <!-- headphones -->
+      <ellipse cx="-25" cy="38" rx="10" ry="14" fill="#222" stroke="#333" stroke-width="2"/>
+      <ellipse cx="25" cy="38" rx="10" ry="14" fill="#222" stroke="#333" stroke-width="2"/>
+      <path d="M-25,28 Q0,18 25,28" fill="none" stroke="#333" stroke-width="3"/>
+      <!-- hoodie hint -->
+      <path d="M-24,20 Q0,8 24,20" fill="#333" stroke="#444" stroke-width="1"/>
+      <!-- arms -->
+      <path d="M-20,45 Q-35,35 -38,25" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+      <path d="M20,45 Q35,35 38,25" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <!-- smoke/fog -->
+    <ellipse cx="150" cy="500" rx="80" ry="20" fill="#fff1" opacity="0.3"/>
+    <ellipse cx="400" cy="520" rx="100" ry="15" fill="#fff1" opacity="0.25"/>
+    <!-- music notes floating -->
+    <text x="440" y="200" font-size="20" fill="#ff3b8d88">♪</text>
+    <text x="120" y="150" font-size="16" fill="#00e5ff88">♫</text>
+    <text x="380" y="440" font-size="18" fill="#b347ea88">♪</text>
+    <!-- glow from inside -->
+    <ellipse cx="300" cy="350" rx="60" ry="120" fill="#ff3b8d22"/>`
+  },
+  {
+    title: "Meeting Ralph",
+    caption: "Inside, the music wasn't coming from a DJ — it was alive. A swirling AI entity named Ralph introduced itself...",
+    bubble: { text: "Hello, little berry. I am Ralph — the AI loop. Wanna jam?", top: "70%", left: "8%", cls: "" },
+    svg: `<defs>
+      <radialGradient id="g2" cx="50%" cy="60%"><stop offset="0%" stop-color="#002040"/><stop offset="100%" stop-color="#050010"/></radialGradient>
+      <linearGradient id="ralphGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#00e5ff"/><stop offset="50%" stop-color="#00e5ffaa"/><stop offset="100%" stop-color="#00e5ff00"/></linearGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g2)"/>
+    <!-- grid floor -->
+    <line x1="0" y1="450" x2="600" y2="450" stroke="#003366" stroke-width="1"/>
+    <line x1="0" y1="500" x2="600" y2="500" stroke="#00336644" stroke-width="1"/>
+    <line x1="0" y1="550" x2="600" y2="550" stroke="#00336622" stroke-width="1"/>
+    <line x1="150" y1="450" x2="100" y2="600" stroke="#003366" stroke-width="1"/>
+    <line x1="300" y1="450" x2="300" y2="600" stroke="#003366" stroke-width="1"/>
+    <line x1="450" y1="450" x2="500" y2="600" stroke="#003366" stroke-width="1"/>
+    <!-- DJ deck -->
+    <rect x="180" y="380" width="240" height="60" rx="10" fill="#111" stroke="#333" stroke-width="2"/>
+    <rect x="200" y="390" width="80" height="20" rx="5" fill="#1a1a2e"/>
+    <circle cx="240" cy="400" r="6" fill="#39ff14" opacity="0.8"/>
+    <rect x="320" y="390" width="80" height="20" rx="5" fill="#1a1a2e"/>
+    <circle cx="360" cy="400" r="6" fill="#ff3b8d" opacity="0.8"/>
+    <!-- Ralph - the AI loop -->
+    <g transform="translate(300, 180)">
+      <!-- energy rings -->
+      <ellipse cx="0" cy="0" rx="60" ry="25" fill="none" stroke="#00e5ff" stroke-width="2" opacity="0.4">
+        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="8s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="0" cy="0" rx="45" ry="18" fill="none" stroke="#00e5ff" stroke-width="2" opacity="0.6">
+        <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="6s" repeatCount="indefinite"/>
+      </ellipse>
+      <!-- waveform body -->
+      <path d="M-50,0 Q-40,-30 -30,10 Q-20,-25 -10,5 Q0,-20 10,0 Q20,-15 30,10 Q40,-20 50,0" fill="none" stroke="#00e5ff" stroke-width="4"/>
+      <path d="M-50,0 Q-40,-30 -30,10 Q-20,-25 -10,5 Q0,-20 10,0 Q20,-15 30,10 Q40,-20 50,0" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.7"/>
+      <!-- circuit patterns -->
+      <circle cx="0" cy="0" r="4" fill="#fff"/>
+      <circle cx="0" cy="0" r="12" fill="#00e5ff33"/>
+      <circle cx="0" cy="0" r="20" fill="#00e5ff11"/>
+      <!-- "eye" center -->
+      <ellipse cx="0" cy="0" rx="8" ry="5" fill="#fff"/>
+      <ellipse cx="0" cy="0" rx="4" ry="2.5" fill="#003366"/>
+    </g>
+    <!-- DJ Strawberry reaching out -->
+    <g transform="translate(180, 340)">
+      <ellipse cx="0" cy="40" rx="26" ry="34" fill="#ff2d55"/>
+      <circle cx="-8" cy="30" r="2.5" fill="#ffcc00"/>
+      <circle cx="10" cy="28" r="2.5" fill="#ffcc00"/>
+      <circle cx="-4" cy="46" r="2.5" fill="#ffcc00"/>
+      <path d="M0,-8 Q-2,-20 4,-30" fill="#2ecc40" stroke="#27ae30" stroke-width="1"/>
+      <ellipse cx="-8" cy="-24" rx="7" ry="3" fill="#2ecc40" transform="rotate(-25,-8,-24)"/>
+      <ellipse cx="-8" cy="36" rx="5" ry="5" fill="white"/>
+      <ellipse cx="8" cy="36" rx="5" ry="5" fill="white"/>
+      <circle cx="-8" cy="37" r="2.5" fill="#111"/>
+      <circle cx="8" cy="37" r="2.5" fill="#111"/>
+      <circle cx="0" cy="26" r="4" fill="#ffe66d"/>
+      <circle cx="0" cy="26" r="7" fill="#ffe66d44"/>
+      <!-- arm reaching out -->
+      <path d="M15,45 Q30,30 45,15" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="45" cy="15" r="5" fill="#ff2d55"/>
+    </g>
+    <text x="120" y="540" font-size="16" fill="#00e5ff55">♪</text>
+    <text x="460" y="200" font-size="20" fill="#00e5ff55">♫</text>`
+  },
+  {
+    title: "Building the OS",
+    caption: "Inspired, DJ Strawberry retreated to the lab. Days and nights blur as code, waveforms, and strawberries fuse into something new...",
+    bubble: { text: "If I can teach the machines to feel the groove... we can set music FREE!", top: "10%", left: "8%", cls: "thought" },
+    svg: `<defs>
+      <radialGradient id="g3" cx="50%" cy="30%"><stop offset="0%" stop-color="#1a0030"/><stop offset="100%" stop-color="#050010"/></radialGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g3)"/>
+    <!-- room -->
+    <rect x="0" y="350" width="600" height="250" fill="#0a0020"/>
+    <!-- desk -->
+    <rect x="100" y="370" width="400" height="15" rx="4" fill="#1a1a2e"/>
+    <!-- holographic screens -->
+    <rect x="130" y="130" width="160" height="110" rx="8" fill="#000822" stroke="#00e5ff" stroke-width="1.5" opacity="0.9"/>
+    <rect x="310" y="80" width="160" height="130" rx="8" fill="#000822" stroke="#ff3b8d" stroke-width="1.5" opacity="0.9"/>
+    <rect x="220" y="50" width="140" height="90" rx="8" fill="#000822" stroke="#b347ea" stroke-width="1.5" opacity="0.8"/>
+    <!-- code on screens -->
+    <line x1="145" y1="155" x2="200" y2="155" stroke="#39ff14" stroke-width="1.5" opacity="0.8"/>
+    <line x1="145" y1="165" x2="240" y2="165" stroke="#39ff14" stroke-width="1.5" opacity="0.6"/>
+    <line x1="145" y1="175" x2="180" y2="175" stroke="#39ff14" stroke-width="1.5" opacity="0.8"/>
+    <line x1="145" y1="185" x2="250" y2="185" stroke="#ffe66d" stroke-width="1.5" opacity="0.7"/>
+    <line x1="145" y1="195" x2="210" y2="195" stroke="#39ff14" stroke-width="1.5" opacity="0.6"/>
+    <line x1="145" y1="205" x2="230" y2="205" stroke="#39ff14" stroke-width="1.5" opacity="0.8"/>
+    <line x1="145" y1="215" x2="260" y2="215" stroke="#ff3b8d" stroke-width="1.5" opacity="0.7"/>
+    <!-- waveforms -->
+    <path d="M325,110 Q335,90 345,110 Q355,130 365,110 Q375,90 385,110 Q395,130 405,110 Q415,90 425,110" fill="none" stroke="#00e5ff" stroke-width="2"/>
+    <path d="M325,130 Q340,110 355,130 Q370,150 385,130 Q400,110 415,130 Q430,150 445,130" fill="none" stroke="#ff3b8d" stroke-width="2"/>
+    <path d="M325,150 Q340,135 355,150 Q370,165 385,150" fill="none" stroke="#ffe66d" stroke-width="2"/>
+    <!-- music notes on screens -->
+    <text x="300" y="120" font-size="14" fill="#00e5ff">♫</text>
+    <text x="430" y="100" font-size="12" fill="#ff3b8d">♪</text>
+    <!-- keyboard -->
+    <rect x="200" y="390" width="200" height="40" rx="6" fill="#111" stroke="#333" stroke-width="1"/>
+    <g fill="#1a1a2e">
+      <rect x="208" y="396" width="14" height="12" rx="2"/>
+      <rect x="226" y="396" width="14" height="12" rx="2"/>
+      <rect x="244" y="396" width="14" height="12" rx="2"/>
+      <rect x="262" y="396" width="14" height="12" rx="2"/>
+    </g>
+    <!-- DJ Strawberry at desk -->
+    <g transform="translate(300, 300)">
+      <ellipse cx="0" cy="40" rx="24" ry="32" fill="#ff2d55"/>
+      <circle cx="-7" cy="28" r="2" fill="#ffcc00"/>
+      <circle cx="8" cy="30" r="2" fill="#ffcc00"/>
+      <circle cx="-3" cy="44" r="2" fill="#ffcc00"/>
+      <path d="M0,-6 Q-1,-16 4,-24" fill="#2ecc40" stroke="#27ae30" stroke-width="1"/>
+      <ellipse cx="6" cy="-20" rx="7" ry="3" fill="#2ecc40" transform="rotate(20,6,-20)"/>
+      <!-- focused eyes -->
+      <ellipse cx="-7" cy="34" rx="4" ry="4" fill="white"/>
+      <ellipse cx="7" cy="34" rx="4" ry="4" fill="white"/>
+      <circle cx="-7" cy="35" r="2.2" fill="#111"/>
+      <circle cx="7" cy="35" r="2.2" fill="#111"/>
+      <circle cx="0" cy="24" r="4" fill="#ffe66d"/>
+      <circle cx="0" cy="24" r="6" fill="#ffe66d44"/>
+      <!-- determined mouth -->
+      <line x1="-4" y1="46" x2="4" y2="46" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+      <!-- arms typing -->
+      <path d="M-15,45 Q-25,50 -30,55" fill="none" stroke="#ff2d55" stroke-width="6" stroke-linecap="round"/>
+      <path d="M15,45 Q25,50 30,55" fill="none" stroke="#ff2d55" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <!-- ambient elements -->
+    <text x="80" y="500" font-size="24" fill="#b347ea33">🍓</text>
+    <text x="480" y="300" font-size="18" fill="#ffe66d33">⚡</text>
+    <circle cx="500" cy="100" r="2" fill="#fff" opacity="0.5"/>
+    <circle cx="100" cy="80" r="1.5" fill="#fff" opacity="0.4"/>
+    <circle cx="550" cy="250" r="1" fill="#fff" opacity="0.3"/>`
+  },
+  {
+    title: "The Unicode CDJ",
+    caption: "The breakthrough: a DJ controller that speaks in Unicode glyphs. Music symbols float, hearts pulse, lightning strikes the beat...",
+    bubble: { text: "BEHOLD! The Unicode CDJ — where every symbol becomes a SOUND! ♪⚡♥", top: "8%", left: "10%", cls: "" },
+    svg: `<defs>
+      <radialGradient id="g4" cx="50%" cy="50%"><stop offset="0%" stop-color="#1a0030"/><stop offset="100%" stop-color="#050010"/></radialGradient>
+      <linearGradient id="rainbow" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff3b8d"/><stop offset="33%" stop-color="#ffe66d"/><stop offset="66%" stop-color="#00e5ff"/><stop offset="100%" stop-color="#b347ea"/></linearGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g4)"/>
+    <!-- stage backdrop -->
+    <rect x="0" y="0" width="600" height="200" fill="#0a0020"/>
+    <!-- DJ deck "Unicode CDJ" -->
+    <rect x="140" y="370" width="320" height="50" rx="12" fill="url(#rainbow)" opacity="0.9"/>
+    <rect x="150" y="376" width="300" height="38" rx="8" fill="#111"/>
+    <!-- deck platters -->
+    <circle cx="220" cy="395" r="25" fill="#1a1a2e" stroke="#333" stroke-width="1.5"/>
+    <circle cx="220" cy="395" r="10" fill="#333"/>
+    <circle cx="380" cy="395" r="25" fill="#1a1a2e" stroke="#333" stroke-width="1.5"/>
+    <circle cx="380" cy="395" r="10" fill="#333"/>
+    <!-- Unicode glyphs floating -->
+    <text x="160" y="260" font-size="40" fill="#ffe66d" filter="drop-shadow(0 0 8px #ffe66d)">♪</text>
+    <text x="430" y="230" font-size="36" fill="#00e5ff" filter="drop-shadow(0 0 8px #00e5ff)">♫</text>
+    <text x="200" y="200" font-size="50" fill="#ff3b8d" filter="drop-shadow(0 0 10px #ff3b8d)">♥</text>
+    <text x="380" y="280" font-size="44" fill="#ffe66d" filter="drop-shadow(0 0 8px #ffe66d)">⚡</text>
+    <text x="280" y="180" font-size="38" fill="#b347ea" filter="drop-shadow(0 0 8px #b347ea)">✨</text>
+    <text x="450" y="320" font-size="30" fill="#39ff14" filter="drop-shadow(0 0 6px #39ff14)">🎵</text>
+    <text x="120" y="310" font-size="32" fill="#ff9100" filter="drop-shadow(0 0 6px #ff9100)">🔊</text>
+    <!-- glyph trails -->
+    <line x1="220" y1="320" x2="180" y2="270" stroke="#ffe66d" stroke-width="1" opacity="0.5"/>
+    <line x1="380" y1="320" x2="430" y2="270" stroke="#00e5ff" stroke-width="1" opacity="0.5"/>
+    <!-- DJ Strawberry triumphant -->
+    <g transform="translate(300, 280)">
+      <ellipse cx="0" cy="40" rx="30" ry="38" fill="#ff2d55"/>
+      <circle cx="-12" cy="28" r="3" fill="#ffcc00"/>
+      <circle cx="12" cy="24" r="3" fill="#ffcc00"/>
+      <circle cx="-6" cy="48" r="3" fill="#ffcc00"/>
+      <circle cx="10" cy="46" r="3" fill="#ffcc00"/>
+      <circle cx="0" cy="18" r="2.5" fill="#ffcc00"/>
+      <path d="M0,-12 Q-3,-28 6,-40 Q3,-32 -1,-18" fill="#2ecc40" stroke="#27ae30" stroke-width="1"/>
+      <ellipse cx="10" cy="-34" rx="9" ry="4" fill="#2ecc40" transform="rotate(25,10,-34)"/>
+      <!-- excited eyes -->
+      <ellipse cx="-10" cy="34" rx="6" ry="6" fill="white"/>
+      <ellipse cx="10" cy="34" rx="6" ry="6" fill="white"/>
+      <circle cx="-10" cy="35" r="3" fill="#111"/>
+      <circle cx="10" cy="35" r="3" fill="#111"/>
+      <!-- sparkle in eyes -->
+      <circle cx="-11" cy="33" r="1.5" fill="white"/>
+      <circle cx="9" cy="33" r="1.5" fill="white"/>
+      <!-- third eye -->
+      <circle cx="0" cy="22" r="5" fill="#ffe66d"/>
+      <circle cx="0" cy="22" r="9" fill="#ffe66d44"/>
+      <circle cx="0" cy="22" r="2.5" fill="#fff"/>
+      <!-- big grin -->
+      <path d="M-8,48 Q0,56 8,48" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- arms up -->
+      <path d="M-20,40 Q-40,15 -45,-5" fill="none" stroke="#ff2d55" stroke-width="8" stroke-linecap="round"/>
+      <path d="M20,40 Q40,15 45,-5" fill="none" stroke="#ff2d55" stroke-width="8" stroke-linecap="round"/>
+      <!-- hands -->
+      <circle cx="-45" cy="-5" r="6" fill="#ff2d55"/>
+      <circle cx="45" cy="-5" r="6" fill="#ff2d55"/>
+    </g>
+    <!-- crowd silhouettes at bottom -->
+    <g fill="#0a0020">
+      <ellipse cx="60" cy="520" rx="10" ry="20"/>
+      <ellipse cx="120" cy="510" rx="12" ry="22"/>
+      <ellipse cx="200" cy="530" rx="9" ry="18"/>
+      <ellipse cx="350" cy="515" rx="11" ry="21"/>
+      <ellipse cx="450" cy="525" rx="10" ry="19"/>
+      <ellipse cx="530" cy="510" rx="11" ry="20"/>
+    </g>
+    <!-- sparkles -->
+    <circle cx="150" cy="160" r="2" fill="#fff" opacity="0.7"/>
+    <circle cx="480" cy="140" r="2" fill="#fff" opacity="0.6"/>
+    <circle cx="300" cy="100" r="3" fill="#ffe66d" opacity="0.8"/>`
+  },
+  {
+    title: "Community Festival",
+    caption: "Word spread. The Unicode CDJ + Ralph's AI loops created something magical. The first Sonic Forage community festival was born...",
+    bubble: { text: "THIS is Sonic Forage! Every berry, every beat, every soul — TOGETHER!", top: "8%", left: "5%", cls: "" },
+    svg: `<defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a0030"/><stop offset="50%" stop-color="#ff3b8d44"/><stop offset="100%" stop-color="#ff9100"/></linearGradient>
+      <radialGradient id="sun" cx="50%" cy="70%"><stop offset="0%" stop-color="#ffe66d"/><stop offset="50%" stop-color="#ff9100aa"/><stop offset="100%" stop-color="#ff910000"/></radialGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#sky)"/>
+    <!-- sun -->
+    <circle cx="300" cy="380" r="100" fill="url(#sun)"/>
+    <!-- stage -->
+    <rect x="50" y="280" width="500" height="30" rx="6" fill="#111" stroke="#333" stroke-width="1"/>
+    <rect x="100" y="240" width="400" height="40" rx="8" fill="#1a1a2e" stroke="#ff3b8d" stroke-width="1"/>
+    <!-- stage decorations -->
+    <circle cx="150" cy="260" r="6" fill="#ff3b8d"/>
+    <circle cx="300" cy="260" r="6" fill="#ffe66d"/>
+    <circle cx="450" cy="260" r="6" fill="#00e5ff"/>
+    <!-- strawberry motif banner -->
+    <text x="190" y="268" font-size="14" fill="#ff3b8d">🍓</text>
+    <text x="340" y="268" font-size="14" fill="#ff3b8d">🍓</text>
+    <!-- DJ Strawberry on stage -->
+    <g transform="translate(300, 200)">
+      <ellipse cx="0" cy="40" rx="28" ry="36" fill="#ff2d55"/>
+      <circle cx="-10" cy="28" r="3" fill="#ffcc00"/>
+      <circle cx="10" cy="24" r="3" fill="#ffcc00"/>
+      <circle cx="-5" cy="46" r="3" fill="#ffcc00"/>
+      <circle cx="12" cy="44" r="2.5" fill="#ffcc00"/>
+      <path d="M0,-10 Q-2,-24 5,-34" fill="#2ecc40" stroke="#27ae30" stroke-width="1"/>
+      <ellipse cx="8" cy="-28" rx="8" ry="3" fill="#2ecc40" transform="rotate(22,8,-28)"/>
+      <ellipse cx="-9" cy="34" rx="5" ry="5" fill="white"/>
+      <ellipse cx="9" cy="34" rx="5" ry="5" fill="white"/>
+      <circle cx="-9" cy="35" r="2.5" fill="#111"/>
+      <circle cx="9" cy="35" r="2.5" fill="#111"/>
+      <circle cx="0" cy="22" r="4" fill="#ffe66d"/>
+      <circle cx="0" cy="22" r="7" fill="#ffe66d44"/>
+      <path d="M-5,48 Q0,54 5,48" fill="none" stroke="#111" stroke-width="2"/>  
+      <!-- one hand on deck, one raised -->
+      <path d="M-18,44 Q-25,50 -22,60" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+      <path d="M18,40 Q35,20 40,0" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <!-- DJ deck on stage -->
+    <rect x="230" y="250" width="140" height="20" rx="4" fill="#222" stroke="#333" stroke-width="1"/>
+    <!-- crowd -->
+    <g fill="#0a0020">
+      <ellipse cx="30" cy="480" rx="12" ry="25"/>
+      <ellipse cx="80" cy="460" rx="14" ry="28"/>
+      <ellipse cx="140" cy="490" rx="11" ry="22"/>
+      <ellipse cx="200" cy="470" rx="13" ry="26"/>
+      <ellipse cx="260" cy="485" rx="12" ry="24"/>
+      <ellipse cx="340" cy="475" rx="11" ry="25"/>
+      <ellipse cx="400" cy="485" rx="13" ry="23"/>
+      <ellipse cx="460" cy="465" rx="12" ry="27"/>
+      <ellipse cx="520" cy="480" rx="14" ry="24"/>
+      <ellipse cx="570" cy="470" rx="11" ry="22"/>
+    </g>
+    <!-- glow sticks -->
+    <line x1="80" y1="440" x2="75" y2="420" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <line x1="200" y1="450" x2="210" y2="430" stroke="#ff3b8d" stroke-width="3" stroke-linecap="round"/>
+    <line x1="400" y1="460" x2="395" y2="440" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+    <line x1="520" y1="445" x2="525" y2="425" stroke="#ffe66d" stroke-width="3" stroke-linecap="round"/>
+    <!-- confetti -->
+    <rect x="100" y="120" width="6" height="3" fill="#ff3b8d" transform="rotate(30,100,120)" opacity="0.8"/>
+    <rect x="250" y="90" width="5" height="3" fill="#00e5ff" transform="rotate(-20,250,90)" opacity="0.7"/>
+    <rect x="400" y="110" width="6" height="3" fill="#ffe66d" transform="rotate(45,400,110)" opacity="0.8"/>
+    <rect x="520" y="80" width="5" height="3" fill="#b347ea" transform="rotate(-35,520,80)" opacity="0.7"/>
+    <rect x="170" y="70" width="5" height="3" fill="#39ff14" transform="rotate(15,170,70)" opacity="0.6"/>
+    <rect x="350" y="60" width="6" height="3" fill="#ff3b8d" transform="rotate(-10,350,60)" opacity="0.7"/>
+    <!-- fireworks -->
+    <circle cx="120" cy="60" r="15" fill="#ffe66d44"/>
+    <circle cx="480" cy="50" r="12" fill="#ff3b8d44"/>
+    <circle cx="300" cy="40" r="10" fill="#00e5ff33"/>
+    <line x1="120" y1="60" x2="100" y2="30" stroke="#ffe66d" stroke-width="1" opacity="0.5"/>
+    <line x1="120" y1="60" x2="140" y2="35" stroke="#ffe66d" stroke-width="1" opacity="0.5"/>
+    <line x1="480" y1="50" x2="460" y2="20" stroke="#ff3b8d" stroke-width="1" opacity="0.5"/>
+    <line x1="480" y1="50" x2="500" y2="25" stroke="#ff3b8d" stroke-width="1" opacity="0.5"/>`
+  },
+  {
+    title: "Intergalactic 2045",
+    caption: "The festival outgrew Earth. DJ Strawberry and Ralph converted a spaceship into a mobile rave, launching the 2045 Intergalactic Tour...",
+    bubble: { text: "Next stop: ANDROMEDA! The galaxy needs to FEEL this bass! 🚀", top: "60%", left: "52%", cls: "" },
+    svg: `<defs>
+      <radialGradient id="g6" cx="50%" cy="50%"><stop offset="0%" stop-color="#0a0030"/><stop offset="100%" stop-color="#020010"/></radialGradient>
+      <radialGradient id="nebula1" cx="30%" cy="30%"><stop offset="0%" stop-color="#b347ea66"/><stop offset="100%" stop-color="#b347ea00"/></radialGradient>
+      <radialGradient id="nebula2" cx="70%" cy="60%"><stop offset="0%" stop-color="#00e5ff44"/><stop offset="100%" stop-color="#00e5ff00"/></radialGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g6)"/>
+    <!-- nebulae -->
+    <ellipse cx="150" cy="180" rx="120" ry="80" fill="url(#nebula1)"/>
+    <ellipse cx="450" cy="400" rx="100" ry="70" fill="url(#nebula2)"/>
+    <!-- stars -->
+    <circle cx="50" cy="30" r="1.5" fill="#fff" opacity="0.8"/>
+    <circle cx="180" cy="60" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="350" cy="40" r="2" fill="#fff" opacity="0.9"/>
+    <circle cx="500" cy="80" r="1" fill="#fff" opacity="0.5"/>
+    <circle cx="550" cy="150" r="1.5" fill="#fff" opacity="0.7"/>
+    <circle cx="30" cy="400" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="570" cy="500" r="1.5" fill="#fff" opacity="0.8"/>
+    <circle cx="100" cy="250" r="1" fill="#fff" opacity="0.5"/>
+    <circle cx="480" cy="220" r="1" fill="#fff" opacity="0.6"/>
+    <!-- distant planet -->
+    <circle cx="480" cy="120" r="30" fill="#2d1b4e"/>
+    <ellipse cx="470" cy="115" rx="20" ry="4" fill="#b347ea33" transform="rotate(-20,470,115)"/>
+    <!-- strawberry spaceship -->
+    <g transform="translate(200, 240) rotate(-15)">
+      <!-- ship body - strawberry shape -->
+      <ellipse cx="0" cy="0" rx="45" ry="55" fill="#ff2d55"/>
+      <ellipse cx="0" cy="0" rx="45" ry="55" fill="none" stroke="#ff5c7a" stroke-width="2"/>
+      <!-- seeds as windows -->
+      <circle cx="-15" cy="-15" r="6" fill="#ffe66d44" stroke="#ffe66d" stroke-width="1"/>
+      <circle cx="15" cy="-10" r="6" fill="#ffe66d44" stroke="#ffe66d" stroke-width="1"/>
+      <circle cx="-10" cy="10" r="5" fill="#ffe66d44" stroke="#ffe66d" stroke-width="1"/>
+      <circle cx="10" cy="15" r="5" fill="#ffe66d44" stroke="#ffe66d" stroke-width="1"/>
+      <circle cx="0" cy="-5" r="7" fill="#ffe66d66" stroke="#ffe66d" stroke-width="1.5"/>
+      <!-- cockpit window -->
+      <ellipse cx="0" cy="-25" rx="18" ry="14" fill="#00336688" stroke="#00e5ff" stroke-width="2"/>
+      <!-- DJ Strawberry in cockpit -->
+      <ellipse cx="0" cy="-22" rx="10" ry="9" fill="#ff2d55"/>
+      <circle cx="-4" cy="-24" r="1.5" fill="#ffcc00"/>
+      <circle cx="4" cy="-23" r="1.5" fill="#ffcc00"/>
+      <circle cx="0" cy="-26" r="2.5" fill="#ffe66d"/>
+      <circle cx="0" cy="-26" r="4" fill="#ffe66d44"/>
+      <ellipse cx="-3" cy="-20" rx="2" ry="2" fill="white"/>
+      <ellipse cx="3" cy="-20" rx="2" ry="2" fill="white"/>
+      <!-- engine glow -->
+      <ellipse cx="0" cy="55" rx="20" ry="10" fill="#00e5ff88"/>
+      <ellipse cx="0" cy="60" rx="10" ry="5" fill="#fff6"/>
+      <!-- trail -->
+      <path d="M-10,55 Q-5,100 0,140" fill="none" stroke="#00e5ff" stroke-width="2" opacity="0.4"/>
+      <path d="M10,55 Q5,110 0,150" fill="none" stroke="#ff3b8d" stroke-width="2" opacity="0.3"/>
+      <!-- "2045" registration -->
+      <text x="-14" y="38" font-size="8" fill="#ffe66d88" font-family="monospace">2045</text>
+    </g>
+    <!-- follower ships -->
+    <g transform="translate(380, 350) rotate(-10)">
+      <ellipse cx="0" cy="0" rx="18" ry="22" fill="#b347ea"/>
+      <ellipse cx="0" cy="20" rx="8" ry="4" fill="#00e5ff88"/>
+      <circle cx="0" cy="-8" r="6" fill="#00336688" stroke="#00e5ff" stroke-width="1"/>
+    </g>
+    <g transform="translate(320, 420) rotate(-8)">
+      <ellipse cx="0" cy="0" rx="14" ry="18" fill="#ff9100"/>
+      <ellipse cx="0" cy="16" rx="6" ry="3" fill="#00e5ff88"/>
+    </g>
+    <g transform="translate(440, 290) rotate(-20)">
+      <ellipse cx="0" cy="0" rx="16" ry="20" fill="#39ff14"/>
+      <ellipse cx="0" cy="18" rx="7" ry="4" fill="#00e5ff88"/>
+    </g>
+    <!-- musical trail -->
+    <text x="100" y="380" font-size="22" fill="#ff3b8d66">♪</text>
+    <text x="70" y="420" font-size="18" fill="#00e5ff66">♫</text>
+    <text x="130" y="450" font-size="20" fill="#ffe66d66">♪</text>
+    <text x="90" y="480" font-size="16" fill="#b347ea66">🎵</text>
+    <!-- arrow pointing right -->
+    <text x="500" y="300" font-size="28" fill="#00e5ff44">➤</text>`
+  },
+  {
+    title: "Eclipse Birthday Party",
+    caption: "At the edge of the galaxy, DJ Strawberry's birthday aligned with a solar eclipse. The ultimate cosmic rave was inevitable...",
+    bubble: { text: "An eclipse AND my birthday?! The universe KNEW we'd be here! 🎂🌑", top: "70%", left: "50%", cls: "" },
+    svg: `<defs>
+      <radialGradient id="g7" cx="50%" cy="50%"><stop offset="0%" stop-color="#1a0030"/><stop offset="70%" stop-color="#050015"/><stop offset="100%" stop-color="#020008"/></radialGradient>
+      <radialGradient id="corona" cx="50%" cy="50%"><stop offset="0%" stop-color="#fff"/><stop offset="15%" stop-color="#ffe66d"/><stop offset="30%" stop-color="#ff9100"/><stop offset="60%" stop-color="#ff3b8d44"/><stop offset="100%" stop-color="#ff3b8d00"/></radialGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g7)"/>
+    <!-- eclipse -->
+    <circle cx="300" cy="240" r="70" fill="url(#corona)"/>
+    <circle cx="300" cy="240" r="45" fill="#050010"/>
+    <!-- ground/asteroid surface -->
+    <ellipse cx="300" cy="560" rx="320" ry="80" fill="#1a1040"/>
+    <path d="M0,520 Q100,490 200,510 Q300,530 400,500 Q500,480 600,510 L600,600 L0,600Z" fill="#120830"/>
+    <!-- birthday cake (eclipse themed) -->
+    <g transform="translate(300, 380)">
+      <rect x="-35" y="-25" width="70" height="50" rx="6" fill="#1a1a2e" stroke="#333" stroke-width="1.5"/>
+      <!-- frosting drips -->
+      <circle cx="-25" cy="-20" r="3" fill="#fff"/>
+      <circle cx="-10" cy="-22" r="3" fill="#fff"/>
+      <circle cx="10" cy="-20" r="3" fill="#fff"/>
+      <circle cx="25" cy="-22" r="3" fill="#fff"/>
+      <!-- eclipse decoration -->
+      <circle cx="0" cy="-5" r="12" fill="#111"/>
+      <circle cx="0" cy="-5" r="8" fill="#ffe66d66"/>
+      <!-- candle -->
+      <rect x="-2" y="-40" width="4" height="15" rx="1" fill="#ff3b8d"/>
+      <ellipse cx="0" cy="-42" rx="3" ry="5" fill="#ffe66d"/>
+      <ellipse cx="0" cy="-42" rx="1.5" ry="2.5" fill="#fff"/>
+    </g>
+    <!-- DJ Strawberry with party hat -->
+    <g transform="translate(240, 330)">
+      <ellipse cx="0" cy="40" rx="28" ry="36" fill="#ff2d55"/>
+      <circle cx="-10" cy="28" r="3" fill="#ffcc00"/>
+      <circle cx="10" cy="24" r="3" fill="#ffcc00"/>
+      <circle cx="-5" cy="46" r="3" fill="#ffcc00"/>
+      <path d="M0,-10 Q-2,-22 4,-30" fill="#2ecc40" stroke="#27ae30" stroke-width="1"/>
+      <!-- party hat -->
+      <polygon points="-6,-12 6,-12 0,-30" fill="#00e5ff"/>
+      <polygon points="-6,-12 6,-12 0,-30" fill="none" stroke="#00e5ff" stroke-width="1"/>
+      <circle cx="0" cy="-30" r="3" fill="#ffe66d"/>
+      <!-- happy eyes -->
+      <path d="M-13,34 Q-9,30 -5,34" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M5,34 Q9,30 13,34" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="0" cy="22" r="4" fill="#ffe66d"/>
+      <circle cx="0" cy="22" r="7" fill="#ffe66d44"/>
+      <!-- big smile -->
+      <path d="M-8,46 Q0,56 8,46" fill="#111"/>
+      <path d="M-6,46 Q0,53 6,46" fill="#ff4444"/>
+      <!-- arms up celebrating -->
+      <path d="M-22,38 Q-38,20 -40,5" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+      <path d="M22,38 Q38,20 40,5" fill="none" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <!-- alien dancers -->
+    <g transform="translate(420, 370)">
+      <ellipse cx="0" cy="20" rx="12" ry="18" fill="#b347ea"/>
+      <circle cx="0" cy="8" r="8" fill="#b347ea"/>
+      <ellipse cx="-4" cy="6" rx="3" ry="4" fill="white"/>
+      <ellipse cx="4" cy="6" rx="3" ry="4" fill="white"/>
+      <circle cx="-4" cy="7" r="1.5" fill="#111"/>
+      <circle cx="4" cy="7" r="1.5" fill="#111"/>
+      <path d="M-3,12 Q0,16 3,12" fill="none" stroke="#111" stroke-width="1.5"/>
+      <!-- antenna -->
+      <line x1="-3" y1="0" x2="-6" y2="-10" stroke="#b347ea" stroke-width="1.5"/>
+      <circle cx="-6" cy="-10" r="2" fill="#39ff14"/>
+      <line x1="3" y1="0" x2="6" y2="-10" stroke="#b347ea" stroke-width="1.5"/>
+      <circle cx="6" cy="-10" r="2" fill="#39ff14"/>
+    </g>
+    <g transform="translate(150, 385)">
+      <ellipse cx="0" cy="16" rx="10" ry="15" fill="#00e5ff"/>
+      <circle cx="0" cy="5" r="7" fill="#00e5ff"/>
+      <ellipse cx="-3" cy="4" rx="2.5" ry="3" fill="white"/>
+      <ellipse cx="3" cy="4" rx="2.5" ry="3" fill="white"/>
+      <circle cx="-3" cy="5" r="1.2" fill="#111"/>
+      <circle cx="3" cy="5" r="1.2" fill="#111"/>
+      <line x1="0" y1="0" x2="0" y2="-8" stroke="#00e5ff" stroke-width="1.5"/>
+      <circle cx="0" cy="-8" r="2" fill="#ffe66d"/>
+    </g>
+    <!-- smaller alien -->
+    <g transform="translate(500, 400)">
+      <ellipse cx="0" cy="10" rx="7" ry="10" fill="#39ff14"/>
+      <circle cx="0" cy="3" r="5" fill="#39ff14"/>
+      <ellipse cx="-2" cy="2" rx="1.5" ry="2" fill="white"/>
+      <ellipse cx="2" cy="2" rx="1.5" ry="2" fill="white"/>
+    </g>
+    <!-- cosmic aurora -->
+    <path d="M0,100 Q100,80 200,120 Q300,160 400,100 Q500,60 600,90" fill="none" stroke="#b347ea44" stroke-width="8"/>
+    <path d="M0,120 Q150,90 300,140 Q450,180 600,110" fill="none" stroke="#00e5ff33" stroke-width="6"/>
+    <!-- stars and sparkles -->
+    <circle cx="80" cy="80" r="1.5" fill="#fff" opacity="0.8"/>
+    <circle cx="520" cy="60" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="400" cy="30" r="2" fill="#ffe66d" opacity="0.9"/>
+    <circle cx="200" cy="40" r="1" fill="#fff" opacity="0.5"/>`
+  },
+  {
+    title: "To Be Continued...",
+    caption: "The Sonic Forage journey has only just begun. New galaxies, new sounds, new strawberries await. What comes next?",
+    bubble: { text: "The beat goes on... See you in the next galaxy, foragers! 🍓✨", top: "70%", left: "8%", cls: "" },
+    svg: `<defs>
+      <radialGradient id="g8" cx="50%" cy="50%"><stop offset="0%" stop-color="#0a0030"/><stop offset="100%" stop-color="#020010"/></radialGradient>
+      <linearGradient id="portal" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff3b8d"/><stop offset="25%" stop-color="#b347ea"/><stop offset="50%" stop-color="#00e5ff"/><stop offset="75%" stop-color="#39ff14"/><stop offset="100%" stop-color="#ffe66d"/></linearGradient>
+    </defs>
+    <rect width="600" height="600" fill="url(#g8)"/>
+    <!-- cosmic portal -->
+    <circle cx="300" cy="280" r="150" fill="url(#portal)" opacity="0.3"/>
+    <circle cx="300" cy="280" r="120" fill="none" stroke="url(#portal)" stroke-width="3" opacity="0.6"/>
+    <circle cx="300" cy="280" r="90" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+    <circle cx="300" cy="280" r="60" fill="#000" opacity="0.5"/>
+    <!-- portal swirl -->
+    <path d="M210,220 Q240,200 300,210 Q360,220 390,200" fill="none" stroke="#ffe66d" stroke-width="1.5" opacity="0.5"/>
+    <path d="M210,340 Q250,360 300,350 Q350,340 390,360" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/>
+    <!-- music waves from portal -->
+    <path d="M220,280 Q200,260 190,280 Q180,300 170,280" fill="none" stroke="#ff3b8d" stroke-width="1.5" opacity="0.6"/>
+    <path d="M380,280 Q400,255 410,280 Q420,305 430,280" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.6"/>
+    <!-- DJ Strawberry center -->
+    <g transform="translate(300, 360)">
+      <!-- hero pose -->
+      <ellipse cx="0" cy="40" rx="34" ry="42" fill="#ff2d55"/>
+      <circle cx="-14" cy="28" r="3.5" fill="#ffcc00"/>
+      <circle cx="14" cy="24" r="3.5" fill="#ffcc00"/>
+      <circle cx="-8" cy="50" r="3" fill="#ffcc00"/>
+      <circle cx="10" cy="48" r="3" fill="#ffcc00"/>
+      <circle cx="0" cy="16" r="3" fill="#ffcc00"/>
+      <circle cx="-16" cy="42" r="2.5" fill="#ffcc00"/>
+      <path d="M0,-14 Q-3,-32 7,-44 Q3,-34 -1,-20" fill="#2ecc40" stroke="#27ae30" stroke-width="1.5"/>
+      <ellipse cx="10" cy="-36" rx="10" ry="4" fill="#2ecc40" transform="rotate(28,10,-36)"/>
+      <!-- confident eyes -->
+      <ellipse cx="-12" cy="36" rx="6" ry="6" fill="white"/>
+      <ellipse cx="12" cy="36" rx="6" ry="6" fill="white"/>
+      <circle cx="-12" cy="37" r="3.5" fill="#111"/>
+      <circle cx="12" cy="37" r="3.5" fill="#111"/>
+      <circle cx="-13" cy="34" r="2" fill="white"/>
+      <circle cx="11" cy="34" r="2" fill="white"/>
+      <!-- third eye blazing -->
+      <circle cx="0" cy="24" r="6" fill="#ffe66d"/>
+      <circle cx="0" cy="24" r="12" fill="#ffe66d55"/>
+      <circle cx="0" cy="24" r="3" fill="#fff"/>
+      <!-- confident grin -->
+      <path d="M-10,48 Q0,58 10,48" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+      <!-- thumbs up -->
+      <path d="M28,30 Q40,20 45,15" fill="none" stroke="#ff2d55" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="46" cy="13" r="7" fill="#ff2d55"/>
+      <!-- other hand on hip -->
+      <path d="M-28,38 Q-35,50 -32,60" fill="none" stroke="#ff2d55" stroke-width="8" stroke-linecap="round"/>
+    </g>
+    <!-- sparkles around strawberry -->
+    <circle cx="230" cy="320" r="3" fill="#ffe66d" opacity="0.9"/>
+    <circle cx="370" cy="310" r="2" fill="#ff3b8d" opacity="0.8"/>
+    <circle cx="280" cy="300" r="2.5" fill="#00e5ff" opacity="0.8"/>
+    <circle cx="330" cy="290" r="2" fill="#fff" opacity="0.7"/>
+    <circle cx="250" cy="350" r="3" fill="#b347ea" opacity="0.7"/>
+    <circle cx="360" cy="340" r="2" fill="#39ff14" opacity="0.8"/>
+    <!-- silhouettes in portal -->
+    <ellipse cx="260" cy="240" rx="8" ry="15" fill="#000" opacity="0.6"/>
+    <ellipse cx="340" cy="250" rx="7" ry="14" fill="#000" opacity="0.6"/>
+    <ellipse cx="300" cy="220" rx="9" ry="16" fill="#000" opacity="0.5"/>
+    <!-- ships heading into portal -->
+    <g transform="translate(140, 200) rotate(30)">
+      <ellipse cx="0" cy="0" rx="10" ry="14" fill="#ff3b8d88"/>
+      <ellipse cx="0" cy="14" rx="5" ry="3" fill="#00e5ff88"/>
+    </g>
+    <g transform="translate(460, 200) rotate(-30)">
+      <ellipse cx="0" cy="0" rx="10" ry="14" fill="#00e5ff88"/>
+      <ellipse cx="0" cy="14" rx="5" ry="3" fill="#ff3b8d88"/>
+    </g>
+    <!-- stars -->
+    <circle cx="50" cy="40" r="1.5" fill="#fff" opacity="0.6"/>
+    <circle cx="550" cy="80" r="1" fill="#fff" opacity="0.5"/>
+    <circle cx="100" cy="500" r="1.5" fill="#fff" opacity="0.5"/>
+    <circle cx="500" cy="530" r="1" fill="#fff" opacity="0.4"/>
+    <circle cx="30" cy="200" r="2" fill="#ffe66d" opacity="0.7"/>
+    <circle cx="570" cy="350" r="1.5" fill="#ffe66d" opacity="0.6"/>`
+  }
+];
+
+// ========== STATE ==========
+let currentPanel = 0;
+const container = document.getElementById('panelContainer');
+const indicator = document.getElementById('panelIndicator');
+const thumbStrip = document.getElementById('thumbStrip');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+
+// ========== RENDER ==========
+function renderPanel(index) {
+  const p = panels[index];
+  container.classList.add('transitioning');
+  setTimeout(() => {
+    container.innerHTML = `
+      <svg class="panel-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+        ${p.svg}
+      </svg>
+      ${p.bubble ? `<div class="bubble ${p.bubble.cls}" style="top:${p.bubble.top};left:${p.bubble.left}">${p.bubble.text}</div>` : ''}
+    `;
+    container.classList.remove('transitioning');
+    updateNav(index);
+  }, 150);
+}
+
+function updateNav(index) {
+  indicator.textContent = `${index + 1} / ${panels.length}`;
+  btnPrev.disabled = index === 0;
+  btnNext.disabled = index === panels.length - 1;
+  // update thumbnails
+  document.querySelectorAll('.thumb').forEach((t, i) => {
+    t.classList.toggle('active', i === index);
+  });
+}
+
+function goPanel(delta) {
+  const next = currentPanel + delta;
+  if (next >= 0 && next < panels.length) {
+    currentPanel = next;
+    renderPanel(currentPanel);
+  }
+}
+
+// ========== THUMBNAILS ==========
+function buildThumbnails() {
+  thumbStrip.innerHTML = '';
+  panels.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'thumb' + (i === 0 ? ' active' : '');
+    div.title = p.title;  // Use native tooltip instead of data attributes
+    div.innerHTML = `<svg viewBox="0 0 600 600">${p.svg}</svg>`;
+    div.addEventListener('click', () => {
+      currentPanel = i;
+      renderPanel(i);
+    });
+    thumbStrip.appendChild(div);
+    // Store the index directly
+    div._panelIndex = i;
+  });
+}
+
+// ========== KEYBOARD ==========
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    goPanel(1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    goPanel(-1);
+  }
+});
+
+// ========== INIT ==========
+buildThumbnails();
+renderPanel(0);
+
+// add panel title display
+const titleEl = document.createElement('div');
+titleEl.style.cssText = 'text-align:center;color:var(--cyan);font-size:1.2rem;font-weight:700;margin:8px 0;min-height:28px;';
+container.parentNode.insertBefore(titleEl, container.nextSibling);
+
+const origRender = renderPanel;
+renderPanel = function(idx) {
+  titleEl.textContent = panels[idx].title;
+  origRender(idx);
+};
+
+// add caption display
+const captionEl = document.createElement('div');
+captionEl.style.cssText = 'text-align:center;color:#999;font-size:0.85rem;margin:4px 0 0;max-width:600px;line-height:1.4;font-style:italic;';
+container.parentNode.insertBefore(captionEl, titleEl.nextSibling);
+
+renderPanel = function(idx) {
+  titleEl.textContent = panels[idx].title;
+  captionEl.textContent = panels[idx].caption;
+  origRender(idx);
+};
+renderPanel(0);
+</script>
+
+</body>
+</html>
